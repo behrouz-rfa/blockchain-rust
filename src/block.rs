@@ -1,10 +1,11 @@
+use crate::errors::Result;
 use std::time::SystemTime;
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
 use log::info;
-pub type Result<T> = std::result::Result<T, failure::Error>;
 const TARGET_HEXT: usize = 4;
-#[derive(Debug,Clone)]
+use serde::{Serialize,Deserialize};
+#[derive(Debug,Clone,Serialize,Deserialize)]
 pub struct Block {
     timestamp: u128,
     transactions: String,
@@ -13,13 +14,14 @@ pub struct Block {
     height: usize,
     nonce: i32,
 }
-#[derive(Debug)]
-pub struct Blockchain {
-    blocks: Vec<Block>
-}
+
+
 
 impl Block {
 
+    pub(crate) fn get_prev_hash(&self) -> String {
+        self.prev_block_hash.clone()
+    }
     pub fn get_hash(&self) -> String {
         self.hash.clone()
     }
@@ -73,22 +75,8 @@ impl Block {
         vec1.resize(TARGET_HEXT, '0' as u8);
         Ok(&hasher.result_str()[0..TARGET_HEXT] == String::from_utf8(vec1)?)
     }
-
 }
 
-impl Blockchain {
-    pub fn new() -> Blockchain {
-        Blockchain {
-            blocks: vec![Block::new_genesis_block()]
-        }
-    }
-    pub fn add_block(&mut self, data: String) -> Result<()> {
-        let prev = self.blocks.last().unwrap();
-        let new_block = Block::new_block(data, prev.get_hash(),TARGET_HEXT)?;
-        self.blocks.push(new_block);
-        Ok(())
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -96,10 +84,10 @@ mod tests {
 
     #[test]
     fn test_blockchain() {
-        let mut b = Blockchain::new();
-        b.add_block("data".to_string());
-        b.add_block("data2".to_string());
-        b.add_block("data3".to_string());
-        dbg!(b);
+        /*    let mut b = Blockchain::new();
+            b.add_block("data".to_string());
+            b.add_block("data2".to_string());
+            b.add_block("data3".to_string());
+            dbg!(b);*/
     }
 }
