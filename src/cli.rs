@@ -3,6 +3,7 @@ use clap::{arg, Command};
 use crate::blockchain::Blockchain;
 use crate::errors::Result;
 use crate::transaction::Transaction;
+use crate::wallet::Wallets;
 
 pub struct Cli {
 }
@@ -17,6 +18,8 @@ impl Cli {
             .author("behrouz.r.fa@gmail.com")
             .about("blockchain in rust: a simple blockchain for learning")
             .subcommand(Command::new("printchain").about("print all the chain blocks"))
+            .subcommand(Command::new("createwallet").about("create a wallet"))
+            .subcommand(Command::new("listaddresses").about("list all addresses"))
             .subcommand(Command::new("getbalance")
                 .about("get balance in the blochain")
                 .arg(arg!(<ADDRESS>"'The Address it get balance for'"))
@@ -33,6 +36,23 @@ impl Cli {
                     .arg(arg!(<AMOUNT>" 'Destination wallet address'")),
             )
             .get_matches();
+
+
+        if let Some(_) = matches.subcommand_matches("createwallet") {
+            let mut ws = Wallets::new()?;
+            let address = ws.create_wallet();
+            ws.save_all()?;
+            println!("success: address {}", address);
+        }
+
+        if let Some(_) = matches.subcommand_matches("listaddresses") {
+            let ws = Wallets::new()?;
+            let addresses = ws.get_all_address();
+            println!("addresses: ");
+            for ad in addresses {
+                println!("{}", ad);
+            }
+        }
 
         if let Some(ref matches) = matches.subcommand_matches("create") {
             if let Some(address) = matches.get_one::<String>("ADDRESS") {
