@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use clap::builder::Str;
+use failure::format_err;
 use log::info;
 
 use crate::block::Block;
@@ -23,7 +24,33 @@ pub struct BlockchainIter<'a> {
     bc: &'a Blockchain,
 }
 impl Blockchain {
-    /// NewBlockchain creates a new Blockchain db
+
+    pub fn sign_transacton(&self, tx: &mut Transaction, private_key: &[u8]) -> Result<()> {
+        let prev_TXs = self.get_prev_TXs(tx)?;
+        tx.sign(private_key,prev_TXs)?;
+        Ok(())
+    }
+    fn get_prev_TXs(&self, tx: &Transaction) -> Result<HashMap<String, Transaction>> {
+        let mut prev_TXs = HashMap::new();
+        for vin in &tx.vin {
+            let prev_TX = self.find_transacton(&vin.txid)?;
+            prev_TXs.insert(prev_TX.id.clone(), prev_TX);
+        }
+        Ok(prev_TXs)
+    }
+
+    pub fn find_transacton(&self, id: &str) -> Result<Transaction> {
+        for b in self.iter() {
+            for tx in b.get_transaction() {
+                if tx.id == id {
+                    return Ok(tx.clone());
+                }
+            }
+        }
+        Err(format_err!("Transaction is not found"))
+    }
+
+        /// NewBlockchain creates a new Blockchain db
     pub fn new() -> Result<Blockchain> {
         info!("open blockchain");
 
@@ -67,7 +94,7 @@ impl Blockchain {
     }
 
     /// FindUnspentTransactions returns a list of transactions containing unspent outputs
-    fn find_unspent_transactions(&self, address: &str) -> Vec<Transaction> {
+    fn find_unspent_transactions(&self, pub_key_hash: &[u8]) -> Vec<Transaction> {
         let mut spent_TXOs: HashMap<String, Vec<i32>> = HashMap::new();
         let mut unspend_TXs: Vec<Transaction> = Vec::new();
 
@@ -80,14 +107,14 @@ impl Blockchain {
                         }
                     }
 
-                    if tx.vout[index].can_be_unlock_with(address) {
+                    if tx.vout[index].is_locked_with_key(pub_key_hash) {
                         unspend_TXs.push(tx.to_owned())
                     }
                 }
 
                 if !tx.is_coinbase() {
                     for i in &tx.vin {
-                        if i.can_unlock_output_with(address) {
+                        if i.uses_key(pub_key_hash) {
                             match spent_TXOs.get_mut(&i.txid) {
                                 Some(v) => {
                                     v.push(i.vout);
@@ -106,12 +133,12 @@ impl Blockchain {
     }
 
     /// FindUTXO finds and returns all unspent transaction outputs
-    pub fn find_UTXO(&self, address: &str) -> Vec<TXOutput> {
+    pub fn find_UTXO(&self, pub_key_hash: &[u8]) -> Vec<TXOutput> {
         let mut utxos = Vec::<TXOutput>::new();
-        let unspend_TXs = self.find_unspent_transactions(address);
+        let unspend_TXs = self.find_unspent_transactions(pub_key_hash);
         for tx in unspend_TXs {
             for out in &tx.vout {
-                if out.can_be_unlock_with(&address) {
+                if out.is_locked_with_key(&pub_key_hash) {
                     utxos.push(out.clone());
                 }
             }
@@ -122,16 +149,16 @@ impl Blockchain {
     /// FindUnspentTransactions returns a list of transactions containing unspent outputs
     pub fn find_spendable_outputs(
         &self,
-        address: &str,
+        pub_key_hash: &[u8],
         amount: i32,
     ) -> (i32, HashMap<String, Vec<i32>>) {
         let mut unspent_outputs: HashMap<String, Vec<i32>> = HashMap::new();
         let mut accumulated = 0;
-        let unspend_TXs = self.find_unspent_transactions(address);
+        let unspend_TXs = self.find_unspent_transactions(pub_key_hash);
 
         for tx in unspend_TXs {
             for index in 0..tx.vout.len() {
-                if tx.vout[index].can_be_unlock_with(address) && accumulated < amount {
+                if tx.vout[index].is_locked_with_key(pub_key_hash) && accumulated < amount {
                     match unspent_outputs.get_mut(&tx.id) {
                         Some(v) => v.push(index as i32),
                         None => {
