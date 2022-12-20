@@ -6,6 +6,11 @@ use serde::{Serialize, Deserialize};
 use crate::transaction::{Transaction};
 use crate::errors::Result;
 use crate::wallet::hash_pub_key;
+// TXOutputs collects TXOutput
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct TXOutputs {
+    pub outputs: Vec<TXOutput>,
+}
 
 /// TXInput represents a transaction input
 #[derive(Serialize, Deserialize, Debug, Clone)]

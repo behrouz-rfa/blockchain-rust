@@ -9,6 +9,7 @@ mod cli;
 mod transaction;
 mod wallet;
 mod tx;
+mod utxoset;
 
 
 fn main()->Result<()> {
