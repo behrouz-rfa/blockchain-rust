@@ -91,7 +91,7 @@ impl Transaction {
                 signature: Vec::new(),
                 pub_key: Vec::from(data.as_bytes()),
             }],
-            vout: vec![TXOutput::new(100,to)?],
+            vout: vec![TXOutput::new(100, to)?],
         };
         tx.id = tx.hash()?;
         Ok(tx)
@@ -169,8 +169,8 @@ impl Transaction {
         Ok(())
     }
 
-    fn hash(&mut self) -> Result<String> {
-        self.id = String::new();
+    pub(crate) fn hash(&self) -> Result<String> {
+
         let data = bincode::serialize(self)?;
         let mut hasher = Sha256::new();
         hasher.input(&data[..]);
