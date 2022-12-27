@@ -5,7 +5,7 @@ use log::debug;
 use serde::{Serialize, Deserialize};
 use crate::transaction::{Transaction};
 use crate::errors::Result;
-use crate::wallet::hash_pub_key;
+use crate::wallets::hash_pub_key;
 // TXOutputs collects TXOutput
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TXOutputs {

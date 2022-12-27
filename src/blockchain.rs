@@ -8,7 +8,6 @@ use failure::format_err;
 use sled;
 use std::collections::HashMap;
 use log::{debug, info};
-use crate::tx::TXOutputs;
 
 const GENESIS_COINBASE_DATA: &str =
     "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks";
@@ -16,7 +15,7 @@ const GENESIS_COINBASE_DATA: &str =
 /// Blockchain implements interactions with a DB
 #[derive(Debug)]
 pub struct Blockchain {
-    pub current_hash: String,
+    pub tip: String,
     pub db: sled::Db,
 }
 
@@ -42,7 +41,7 @@ impl Blockchain {
         } else {
             String::from_utf8(hash.to_vec())?
         };
-        Ok(Blockchain { current_hash: lasthash, db })
+        Ok(Blockchain { tip: lasthash, db })
     }
 
     /// CreateBlockchain creates a new blockchain DB
@@ -57,7 +56,7 @@ impl Blockchain {
         db.insert(genesis.get_hash(), serialize(&genesis)?)?;
         db.insert("LAST", genesis.get_hash().as_bytes())?;
         let bc = Blockchain {
-            current_hash: genesis.get_hash(),
+            tip: genesis.get_hash(),
             db,
         };
         bc.db.flush()?;
@@ -85,14 +84,14 @@ impl Blockchain {
         self.db.insert("LAST", newblock.get_hash().as_bytes())?;
         self.db.flush()?;
 
-        self.current_hash = newblock.get_hash();
+        self.tip = newblock.get_hash();
         Ok(newblock)
     }
 
     /// Iterator returns a BlockchainIterat
     pub fn iter(&self) -> BlockchainIterator {
         BlockchainIterator {
-            current_hash: self.current_hash.clone(),
+            current_hash: self.tip.clone(),
             bc: &self,
         }
     }
@@ -192,7 +191,7 @@ impl Blockchain {
         let lastheight = self.get_best_height()?;
         if block.get_height() > lastheight {
             self.db.insert("LAST", block.get_hash().as_bytes())?;
-            self.current_hash = block.get_hash();
+            self.tip = block.get_hash();
             self.db.flush()?;
         }
         Ok(())

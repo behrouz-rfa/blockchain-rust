@@ -7,7 +7,7 @@ mod errors;
 mod blockchain;
 mod cli;
 mod transaction;
-mod wallet;
+mod wallets;
 mod tx;
 mod utxoset;
 mod server;
