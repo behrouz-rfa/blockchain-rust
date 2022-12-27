@@ -15,13 +15,16 @@ pub struct Block {
     transactions: Vec<Transaction>,
     prev_block_hash: String,
     hash: String,
-    height: usize,
+    height: i32,
     nonce: i32,
 }
 
 
 
 impl Block {
+    pub fn get_height(&self) -> i32 {
+        self.height
+    }
     pub fn get_transaction(&self) -> &Vec<Transaction> {
         &self.transactions
     }
@@ -36,7 +39,7 @@ impl Block {
         Block::new_block(vec![coninbase], String::new(), 0).unwrap()
     }
 
-    pub fn new_block(data: Vec<Transaction>, prev_block_hash: String, height: usize) -> Result<Block> {
+    pub fn new_block(data: Vec<Transaction>, prev_block_hash: String, height: i32) -> Result<Block> {
         let timestamp = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)?
             .as_millis();

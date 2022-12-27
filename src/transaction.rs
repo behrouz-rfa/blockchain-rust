@@ -10,7 +10,7 @@ use serde::{Serialize, Deserialize};
 use crate::blockchain::Blockchain;
 use crate::tx::{TXInput, TXOutput};
 use crate::utxoset::UTXOSet;
-use crate::wallet::{hash_pub_key, Wallets};
+use crate::wallet::{hash_pub_key, Wallet, Wallets};
 
 /// Transaction represents a Bitcoin transaction
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -23,17 +23,9 @@ pub struct Transaction {
 
 impl Transaction {
     /// NewUTXOTransaction creates a new transaction
-    pub fn new_UTXO(from: &str, to: &str, amount: i32, bc: &UTXOSet) -> Result<Transaction> {
+    pub fn new_UTXO(wallet: &Wallet,to: &str, amount: i32, bc: &UTXOSet) -> Result<Transaction> {
         let mut vin = Vec::new();
 
-        let wallets = Wallets::new()?;
-        let wallet = match wallets.get_wallet(from) {
-            Some(w) => w,
-            None => return Err(format_err!("from wallet not found")),
-        };
-        if let None = wallets.get_wallet(&to) {
-            return Err(format_err!("to wallet not found"));
-        };
 
         let mut pub_key_hash = wallet.public_key.clone();
         hash_pub_key(&mut pub_key_hash);
@@ -65,7 +57,7 @@ impl Transaction {
             vout.push(
                 TXOutput::new(
                     acc_v.0 - amount,
-                    from.to_string())?)
+                    wallet.get_address())?)
         }
 
 
@@ -102,7 +94,7 @@ impl Transaction {
         self.vin.len() == 1 && self.vin[0].txid.is_empty() && self.vin[0].vout == -1
     }
 
-    pub fn verify(&mut self, prev_TXs: HashMap<String, Transaction>) -> Result<bool> {
+    pub fn verify(& self, prev_TXs: HashMap<String, Transaction>) -> Result<bool> {
         if self.is_coinbase() {
             return Ok(true);
         }

@@ -10,6 +10,7 @@ mod transaction;
 mod wallet;
 mod tx;
 mod utxoset;
+mod server;
 
 
 fn main()->Result<()> {

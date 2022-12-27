@@ -28,7 +28,7 @@ impl Wallet {
     }
 
 
-    fn get_address(&self) -> String {
+    pub(crate) fn get_address(&self) -> String {
         let mut pub_hash = self.public_key.clone();
         hash_pub_key(&mut pub_hash);
         let address = Address {
